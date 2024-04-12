@@ -28,6 +28,7 @@
 #include "text.h"
 #include "util.h"
 #include "window.h"
+#include "menu.h"
 #include "constants/battle_anim.h"
 #include "constants/items.h"
 #include "constants/moves.h"
@@ -35,6 +36,8 @@
 #include "constants/songs.h"
 #include "constants/trainers.h"
 #include "constants/rgb.h"
+#include "graphics.h"
+#include "decompress.h"
 
 static void PlayerHandleGetMonData(void);
 static void PlayerHandleSetMonData(void);
@@ -119,6 +122,10 @@ static void DoSwitchOutAnimation(void);
 static void PlayerDoMoveAnimation(void);
 static void Task_StartSendOutAnim(u8);
 static void EndDrawPartyStatusSummary(void);
+static void SetSpriteInvisibility(u8, bool8);
+static void CreateMoveTypeIcons(void);
+static void SetMoveTypeIcons(void);
+
 
 static void (*const sPlayerBufferCommands[CONTROLLER_CMDS_COUNT])(void) =
 {
@@ -185,6 +192,79 @@ static const u8 sTargetIdentities[MAX_BATTLERS_COUNT] = {B_POSITION_PLAYER_LEFT,
 
 // unknown unused data
 static const u8 sUnused[] = {0x48, 0x48, 0x20, 0x5a, 0x50, 0x50, 0x50, 0x58};
+
+
+
+#define TAG_MOVE_TYPES 10000
+#define TYPE_ICON_SPRITE_COUNT (MAX_MON_MOVES)
+
+enum
+{
+    SPRITE_ARR_ID_TYPE, // 2 for mon types, 5 for move types(4 moves and 1 to learn), used interchangeably, because mon types and move types aren't shown on the same screen
+    SPRITE_ARR_ID_COUNT = TYPE_ICON_SPRITE_COUNT
+};
+
+static const struct OamData sOamData_MoveTypes =
+{
+    .y = 0,
+    .affineMode = ST_OAM_AFFINE_OFF,
+    .objMode = ST_OAM_OBJ_NORMAL,
+    .mosaic = FALSE,
+    .bpp = ST_OAM_4BPP,
+    .shape = SPRITE_SHAPE(32x16),
+    .x = 0,
+    .matrixNum = 0,
+    .size = SPRITE_SIZE(32x16),
+    .tileNum = 0,
+    .priority = 1,
+    .paletteNum = 0,
+    .affineParam = 0,
+};
+
+static const struct CompressedSpriteSheet sSpriteSheet_MoveTypes =
+{
+    .data = gMoveTypes_Gfx,
+    .size = (NUMBER_OF_MON_TYPES) * 0x100,
+    .tag = TAG_MOVE_TYPES
+};
+static const struct SpriteTemplate sSpriteTemplate_MoveTypes =
+{
+    .tileTag = TAG_MOVE_TYPES,
+    .paletteTag = TAG_MOVE_TYPES,
+    .oam = &sOamData_MoveTypes,
+    //.anims = sSpriteAnimTable_MoveTypes,
+    .images = NULL,
+    .affineAnims = gDummySpriteAffineAnimTable,
+    .callback = SpriteCallbackDummy
+};
+
+static const u8 sMoveTypeToOamPaletteNum[NUMBER_OF_MON_TYPES] =
+{
+    [TYPE_NORMAL] = 13,
+    [TYPE_FIGHTING] = 13,
+    [TYPE_FLYING] = 14,
+    [TYPE_POISON] = 14,
+    [TYPE_GROUND] = 13,
+    [TYPE_ROCK] = 13,
+    [TYPE_BUG] = 15,
+    [TYPE_GHOST] = 14,
+    [TYPE_STEEL] = 13,
+    [TYPE_MYSTERY] = 15,
+    [TYPE_FIRE] = 13,
+    [TYPE_WATER] = 14,
+    [TYPE_GRASS] = 15,
+    [TYPE_ELECTRIC] = 13,
+    [TYPE_PSYCHIC] = 14,
+    [TYPE_ICE] = 14,
+    [TYPE_DRAGON] = 15,
+    [TYPE_DARK] = 13,
+    [TYPE_FAIRY] = 14
+};
+
+static EWRAM_DATA struct MoveTypeScreenData
+{
+    u8 spriteIds[SPRITE_ARR_ID_COUNT];
+} *sMoveTypeSprites = NULL;
 
 void BattleControllerDummy(void)
 {
@@ -1495,17 +1575,81 @@ static void MoveSelectionDisplayPpNumber(void)
 
 static void MoveSelectionDisplayMoveType(void)
 {
-    u8 *txtPtr;
+    SetMoveTypeIcons();
+    //struct ChooseMoveStruct *moveInfo = (struct ChooseMoveStruct *)(&gBattleBufferA[gActiveBattler][4]);
+    //BlitMenuInfoIcon(B_WIN_MOVE_TYPE, gBattleMoves[moveInfo->moves[gMoveSelectionCursor[gActiveBattler]]].type + 1, 0, 0);
+    /*
     struct ChooseMoveStruct *moveInfo = (struct ChooseMoveStruct *)(&gBattleBufferA[gActiveBattler][4]);
+    u32 moveType;
+    u32 moveTypePalette;
 
+    moveType = gBattleMoves[moveInfo->moves[gMoveSelectionCursor[gActiveBattler]]].type;
+    moveTypePalette = sMoveTypeToPaletteNum[moveType];*/
+
+
+    /*
     txtPtr = StringCopy(gDisplayedStringBattle, gText_MoveInterfaceType);
     *(txtPtr)++ = EXT_CTRL_CODE_BEGIN;
     *(txtPtr)++ = EXT_CTRL_CODE_FONT;
     *(txtPtr)++ = FONT_NORMAL;
 
-    StringCopy(txtPtr, gTypeNames[gBattleMoves[moveInfo->moves[gMoveSelectionCursor[gActiveBattler]]].type]);
-    BattlePutTextOnWindow(gDisplayedStringBattle, B_WIN_MOVE_TYPE);
+    StringCopy(txtPtr, gTypeNames[gBattleMoves[moveInfo->moves[gMoveSelectionCursor[gActiveBattler]]].type]);*/
+    //LoadCompressedPalette(gMoveTypes_Pal, BG_PLTT_ID(26 - moveTypePalette), 3 * PLTT_SIZE_4BPP);
+    
+    //LoadPalette((OBJ_PLTT_ID(moveTypePalette)), BG_PLTT_ID(13), PLTT_SIZE_4BPP);
+    //sStandardBattleWindowTemplates->B_WIN_MOVE_TYPE.paletteNum = sMoveTypeToPaletteNum[moveType + 1];
+/*
+    FillWindowPixelBuffer(B_WIN_MOVE_TYPE, PIXEL_FILL(0));
+    BlitMenuInfoIcon(B_WIN_MOVE_TYPE, moveType + 1 , 0, 0);
+	PutWindowTilemap(B_WIN_MOVE_TYPE);
+	CopyWindowToVram(B_WIN_MOVE_TYPE, 3);*/
 }
+
+static void SetSpriteInvisibility(u8 spriteArrayId, bool8 invisible)
+{
+    gSprites[sMoveTypeSprites->spriteIds[spriteArrayId]].invisible = invisible;
+}
+
+static void CreateMoveTypeIcons(void)
+{
+    u8 i;
+
+    for (i = SPRITE_ARR_ID_TYPE; i < SPRITE_ARR_ID_TYPE + TYPE_ICON_SPRITE_COUNT; i++)
+    {
+        if (sMoveTypeSprites->spriteIds[i] == SPRITE_NONE)
+            sMoveTypeSprites->spriteIds[i] = CreateSprite(&sSpriteTemplate_MoveTypes, 0, 0, 2);
+
+        SetSpriteInvisibility(i, TRUE);
+    }
+}
+
+static void SetTypeSpritePosAndPal(u8 typeId, u8 x, u8 y, u8 spriteArrayId)
+{
+    struct Sprite *sprite = &gSprites[sMoveTypeSprites->spriteIds[spriteArrayId]];
+    //StartSpriteAnim(sprite, typeId);
+    sprite->oam.paletteNum = sMoveTypeToOamPaletteNum[typeId];
+    sprite->x = x + 16;
+    sprite->y = y + 8;
+    SetSpriteInvisibility(spriteArrayId, FALSE);
+}
+
+static void SetMoveTypeIcons(void)
+{
+    u8 i;    
+    u32 moveType;
+    struct ChooseMoveStruct *moveInfo = (struct ChooseMoveStruct *)(&gBattleBufferA[gActiveBattler][4]);
+
+    moveType = gBattleMoves[moveInfo->moves[gMoveSelectionCursor[gActiveBattler]]].type;
+
+    for (i = 0; i < MAX_MON_MOVES; i++)
+    {
+        if (moveType != MOVE_NONE)
+            SetTypeSpritePosAndPal(moveType, 170, 32 + (i * 16), i + SPRITE_ARR_ID_TYPE);
+        else
+            SetSpriteInvisibility(i + SPRITE_ARR_ID_TYPE, TRUE);
+    }
+}
+
 
 static void MoveSelectionCreateCursorAt(u8 cursorPosition, u8 baseTileNum)
 {
@@ -2641,7 +2785,8 @@ static void PlayerHandleChooseMove(void)
 }
 
 void InitMoveSelectionsVarsAndStrings(void)
-{
+{    
+    CreateMoveTypeIcons();
     MoveSelectionDisplayMoveNames();
     gMultiUsePlayerCursor = 0xFF;
     MoveSelectionCreateCursorAt(gMoveSelectionCursor[gActiveBattler], 0);
@@ -3145,3 +3290,4 @@ static void PlayerHandleEndLinkBattle(void)
 static void PlayerCmdEnd(void)
 {
 }
+
