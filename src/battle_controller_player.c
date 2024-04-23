@@ -222,106 +222,7 @@ static const struct OamData sOamData_MoveTypes =
     .paletteNum = 0,
     .affineParam = 0,
 };
-/*
-static const union AnimCmd sSpriteAnim_TypeNormal[] = {
-    ANIMCMD_FRAME(TYPE_NORMAL * 8, 0, FALSE, FALSE),
-    ANIMCMD_END
-};
-static const union AnimCmd sSpriteAnim_TypeFighting[] = {
-    ANIMCMD_FRAME(TYPE_FIGHTING * 8, 0, FALSE, FALSE),
-    ANIMCMD_END
-};
-static const union AnimCmd sSpriteAnim_TypeFlying[] = {
-    ANIMCMD_FRAME(TYPE_FLYING * 8, 0, FALSE, FALSE),
-    ANIMCMD_END
-};
-static const union AnimCmd sSpriteAnim_TypePoison[] = {
-    ANIMCMD_FRAME(TYPE_POISON * 8, 0, FALSE, FALSE),
-    ANIMCMD_END
-};
-static const union AnimCmd sSpriteAnim_TypeGround[] = {
-    ANIMCMD_FRAME(TYPE_GROUND * 8, 0, FALSE, FALSE),
-    ANIMCMD_END
-};
-static const union AnimCmd sSpriteAnim_TypeRock[] = {
-    ANIMCMD_FRAME(TYPE_ROCK * 8, 0, FALSE, FALSE),
-    ANIMCMD_END
-};
-static const union AnimCmd sSpriteAnim_TypeBug[] = {
-    ANIMCMD_FRAME(TYPE_BUG * 8, 0, FALSE, FALSE),
-    ANIMCMD_END
-};
-static const union AnimCmd sSpriteAnim_TypeGhost[] = {
-    ANIMCMD_FRAME(TYPE_GHOST * 8, 0, FALSE, FALSE),
-    ANIMCMD_END
-};
-static const union AnimCmd sSpriteAnim_TypeSteel[] = {
-    ANIMCMD_FRAME(TYPE_STEEL * 8, 0, FALSE, FALSE),
-    ANIMCMD_END
-};
-static const union AnimCmd sSpriteAnim_TypeMystery[] = {
-    ANIMCMD_FRAME(TYPE_MYSTERY * 8, 0, FALSE, FALSE),
-    ANIMCMD_END
-};
-static const union AnimCmd sSpriteAnim_TypeFire[] = {
-    ANIMCMD_FRAME(TYPE_FIRE * 8, 0, FALSE, FALSE),
-    ANIMCMD_END
-};
-static const union AnimCmd sSpriteAnim_TypeWater[] = {
-    ANIMCMD_FRAME(TYPE_WATER * 8, 0, FALSE, FALSE),
-    ANIMCMD_END
-};
-static const union AnimCmd sSpriteAnim_TypeGrass[] = {
-    ANIMCMD_FRAME(TYPE_GRASS * 8, 0, FALSE, FALSE),
-    ANIMCMD_END
-};
-static const union AnimCmd sSpriteAnim_TypeElectric[] = {
-    ANIMCMD_FRAME(TYPE_ELECTRIC * 8, 0, FALSE, FALSE),
-    ANIMCMD_END
-};
-static const union AnimCmd sSpriteAnim_TypePsychic[] = {
-    ANIMCMD_FRAME(TYPE_PSYCHIC * 8, 0, FALSE, FALSE),
-    ANIMCMD_END
-};
-static const union AnimCmd sSpriteAnim_TypeIce[] = {
-    ANIMCMD_FRAME(TYPE_ICE * 8, 0, FALSE, FALSE),
-    ANIMCMD_END
-};
-static const union AnimCmd sSpriteAnim_TypeDragon[] = {
-    ANIMCMD_FRAME(TYPE_DRAGON * 8, 0, FALSE, FALSE),
-    ANIMCMD_END
-};
-static const union AnimCmd sSpriteAnim_TypeDark[] = {
-    ANIMCMD_FRAME(TYPE_DARK * 8, 0, FALSE, FALSE),
-    ANIMCMD_END
-};
-static const union AnimCmd sSpriteAnim_TypeFairy[] = {
-    ANIMCMD_FRAME(TYPE_FAIRY * 8, 0, FALSE, FALSE),
-    ANIMCMD_END
-};
 
-static const union AnimCmd *const sSpriteAnimTable_MoveTypes[NUMBER_OF_MON_TYPES + CONTEST_CATEGORIES_COUNT] = {
-    sSpriteAnim_TypeNormal,
-    sSpriteAnim_TypeFighting,
-    sSpriteAnim_TypeFlying,
-    sSpriteAnim_TypePoison,
-    sSpriteAnim_TypeGround,
-    sSpriteAnim_TypeRock,
-    sSpriteAnim_TypeBug,
-    sSpriteAnim_TypeGhost,
-    sSpriteAnim_TypeSteel,
-    sSpriteAnim_TypeMystery,
-    sSpriteAnim_TypeFire,
-    sSpriteAnim_TypeWater,
-    sSpriteAnim_TypeGrass,
-    sSpriteAnim_TypeElectric,
-    sSpriteAnim_TypePsychic,
-    sSpriteAnim_TypeIce,
-    sSpriteAnim_TypeDragon,
-    sSpriteAnim_TypeDark,
-    sSpriteAnim_TypeFairy
-};
-*/
 static const struct SpriteTemplate sSpriteTemplate_MoveTypes =
 {
     .tileTag = TAG_MOVE_TYPES,
@@ -366,16 +267,10 @@ static void LoadMoveTypeSpriteData(void)
     sMoveTypeSprite = AllocZeroed(sizeof(*sMoveTypeSprite));    
     if (sMoveTypeSprite != NULL) {
         u8 i;
-        // Initialize the spriteIds array
         for ( i = 0; i < sizeof(sMoveTypeSprite->spriteIds); i++) {
             sMoveTypeSprite->spriteIds[i] = SPRITE_NONE; // Or initialize with whatever default value you prefer
-            DebugPrintf("sMoveTypeSprite->spriteIds[%d]: %d", i, sMoveTypeSprite->spriteIds[i] );
-            DebugPrintf("OK!");
-        }
     }  
     else {
-        // Handle the case where sMoveTypeSprite is NULL
-        // This could be an error condition or you might choose to allocate memory for sMoveTypeSprite here
     }
 }
 
@@ -1697,11 +1592,6 @@ static void MoveSelectionDisplayMoveType(void)
 static void SetSpriteInvisibility(u8 spriteArrayId, bool8 invisible)
 {
     gSprites[sMoveTypeSprite->spriteIds[spriteArrayId]].invisible = invisible;
-    DebugPrintf("spriteArrayId: %d", spriteArrayId);
-    DebugPrintf("sMoveTypeSprite->spriteIds[spriteArrayId]: %d",sMoveTypeSprite->spriteIds[spriteArrayId]);
-    DebugPrintf("gSprites[sMoveTypeSprite->spriteIds[spriteArrayId]]: %d",  gSprites[sMoveTypeSprite->spriteIds[spriteArrayId]]);
-    DebugPrintf("&gSprites[sMoveTypeSprite->spriteIds[spriteArrayId]]: %d",  &gSprites[sMoveTypeSprite->spriteIds[spriteArrayId]]);
-    DebugPrintf("Sprite invisibility set!");
 }
 
 static void CreateMoveTypeIcons(void)
@@ -1709,8 +1599,6 @@ static void CreateMoveTypeIcons(void)
     if (sMoveTypeSprite->spriteIds[0] == SPRITE_NONE)
         sMoveTypeSprite->spriteIds[0] = CreateSprite(&sSpriteTemplate_MoveTypes, 216, 143, 0);
 
-    DebugPrintf("sMoveTypeSprite->spriteIds[%d]: %d", 0, sMoveTypeSprite->spriteIds[0]);
-    DebugPrintf("CreateMoveTypeIcons end");
     SetSpriteInvisibility(0, FALSE);
 
 }
@@ -1719,12 +1607,10 @@ static void SetTypeSpritePosAndPal(u8 typeId, u8 x, u8 y, u8 spriteArrayId)
 {
     
     struct Sprite *sprite = &gSprites[sMoveTypeSprite->spriteIds[spriteArrayId]];
-    DebugPrintf("&gSprites[sMoveTypeSprite->spriteIds[SPRITE_ARR_ID_TYPE - 1]: %d", gSprites[sMoveTypeSprite->spriteIds[spriteArrayId]]);
     sprite->oam.paletteNum = sMoveTypeToOamPaletteNum[typeId];
     sprite->x = x + 16;
     sprite->y = y + 8;
     SetSpriteInvisibility(spriteArrayId, FALSE);
-    DebugPrintf("OK!");
 }
 
 static void SetMoveTypeIcons(void)
@@ -1733,7 +1619,6 @@ static void SetMoveTypeIcons(void)
     struct ChooseMoveStruct *moveInfo = (struct ChooseMoveStruct *)(&gBattleBufferA[gActiveBattler][4]);
 
     moveType = gBattleMoves[moveInfo->moves[gMoveSelectionCursor[gActiveBattler]]].type;
-    DebugPrintf("move type: %d", moveType);
 
     SetTypeSpritePosAndPal(moveType, 216, 143, 0); // i + SPRITE_ARR_ID_TYPE
 }
