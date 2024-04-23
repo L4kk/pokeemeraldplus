@@ -28,6 +28,7 @@
 #include "text.h"
 #include "util.h"
 #include "window.h"
+#include "menu.h"
 #include "constants/battle_anim.h"
 #include "constants/items.h"
 #include "constants/moves.h"
@@ -35,6 +36,10 @@
 #include "constants/songs.h"
 #include "constants/trainers.h"
 #include "constants/rgb.h"
+#include "graphics.h"
+#include "sprite.h"
+#include "decompress.h"
+#include "malloc.h"
 
 static void PlayerHandleGetMonData(void);
 static void PlayerHandleSetMonData(void);
@@ -119,6 +124,10 @@ static void DoSwitchOutAnimation(void);
 static void PlayerDoMoveAnimation(void);
 static void Task_StartSendOutAnim(u8);
 static void EndDrawPartyStatusSummary(void);
+static void SetSpriteInvisibility(u8, bool8);
+static void CreateMoveTypeIcons(void);
+static void SetMoveTypeIcons(void);
+static void LoadMoveTypeSpriteData(void);
 
 static void (*const sPlayerBufferCommands[CONTROLLER_CMDS_COUNT])(void) =
 {
@@ -185,16 +194,201 @@ static const u8 sTargetIdentities[MAX_BATTLERS_COUNT] = {B_POSITION_PLAYER_LEFT,
 
 // unknown unused data
 static const u8 sUnused[] = {0x48, 0x48, 0x20, 0x5a, 0x50, 0x50, 0x50, 0x58};
+//static vbool8 typeIconSpriteSheetLoaded = FALSE;
+
+
+
+#define TAG_MOVE_TYPES 30002
+
+enum
+{
+    SPRITE_ARR_ID_TYPE = 1,
+    MOVE_TYPE_COUNT = 19
+};
+
+static const struct OamData sOamData_MoveTypes =
+{
+    .y = 0,
+    .affineMode = ST_OAM_AFFINE_OFF,
+    .objMode = ST_OAM_OBJ_NORMAL,
+    .mosaic = FALSE,
+    .bpp = ST_OAM_4BPP,
+    .shape = SPRITE_SHAPE(32x16),
+    .x = 0,
+    .matrixNum = 0,
+    .size = SPRITE_SIZE(32x16),
+    .tileNum = 0,
+    .priority = 0,
+    .paletteNum = 0,
+    .affineParam = 0,
+};
+/*
+static const union AnimCmd sSpriteAnim_TypeNormal[] = {
+    ANIMCMD_FRAME(TYPE_NORMAL * 8, 0, FALSE, FALSE),
+    ANIMCMD_END
+};
+static const union AnimCmd sSpriteAnim_TypeFighting[] = {
+    ANIMCMD_FRAME(TYPE_FIGHTING * 8, 0, FALSE, FALSE),
+    ANIMCMD_END
+};
+static const union AnimCmd sSpriteAnim_TypeFlying[] = {
+    ANIMCMD_FRAME(TYPE_FLYING * 8, 0, FALSE, FALSE),
+    ANIMCMD_END
+};
+static const union AnimCmd sSpriteAnim_TypePoison[] = {
+    ANIMCMD_FRAME(TYPE_POISON * 8, 0, FALSE, FALSE),
+    ANIMCMD_END
+};
+static const union AnimCmd sSpriteAnim_TypeGround[] = {
+    ANIMCMD_FRAME(TYPE_GROUND * 8, 0, FALSE, FALSE),
+    ANIMCMD_END
+};
+static const union AnimCmd sSpriteAnim_TypeRock[] = {
+    ANIMCMD_FRAME(TYPE_ROCK * 8, 0, FALSE, FALSE),
+    ANIMCMD_END
+};
+static const union AnimCmd sSpriteAnim_TypeBug[] = {
+    ANIMCMD_FRAME(TYPE_BUG * 8, 0, FALSE, FALSE),
+    ANIMCMD_END
+};
+static const union AnimCmd sSpriteAnim_TypeGhost[] = {
+    ANIMCMD_FRAME(TYPE_GHOST * 8, 0, FALSE, FALSE),
+    ANIMCMD_END
+};
+static const union AnimCmd sSpriteAnim_TypeSteel[] = {
+    ANIMCMD_FRAME(TYPE_STEEL * 8, 0, FALSE, FALSE),
+    ANIMCMD_END
+};
+static const union AnimCmd sSpriteAnim_TypeMystery[] = {
+    ANIMCMD_FRAME(TYPE_MYSTERY * 8, 0, FALSE, FALSE),
+    ANIMCMD_END
+};
+static const union AnimCmd sSpriteAnim_TypeFire[] = {
+    ANIMCMD_FRAME(TYPE_FIRE * 8, 0, FALSE, FALSE),
+    ANIMCMD_END
+};
+static const union AnimCmd sSpriteAnim_TypeWater[] = {
+    ANIMCMD_FRAME(TYPE_WATER * 8, 0, FALSE, FALSE),
+    ANIMCMD_END
+};
+static const union AnimCmd sSpriteAnim_TypeGrass[] = {
+    ANIMCMD_FRAME(TYPE_GRASS * 8, 0, FALSE, FALSE),
+    ANIMCMD_END
+};
+static const union AnimCmd sSpriteAnim_TypeElectric[] = {
+    ANIMCMD_FRAME(TYPE_ELECTRIC * 8, 0, FALSE, FALSE),
+    ANIMCMD_END
+};
+static const union AnimCmd sSpriteAnim_TypePsychic[] = {
+    ANIMCMD_FRAME(TYPE_PSYCHIC * 8, 0, FALSE, FALSE),
+    ANIMCMD_END
+};
+static const union AnimCmd sSpriteAnim_TypeIce[] = {
+    ANIMCMD_FRAME(TYPE_ICE * 8, 0, FALSE, FALSE),
+    ANIMCMD_END
+};
+static const union AnimCmd sSpriteAnim_TypeDragon[] = {
+    ANIMCMD_FRAME(TYPE_DRAGON * 8, 0, FALSE, FALSE),
+    ANIMCMD_END
+};
+static const union AnimCmd sSpriteAnim_TypeDark[] = {
+    ANIMCMD_FRAME(TYPE_DARK * 8, 0, FALSE, FALSE),
+    ANIMCMD_END
+};
+static const union AnimCmd sSpriteAnim_TypeFairy[] = {
+    ANIMCMD_FRAME(TYPE_FAIRY * 8, 0, FALSE, FALSE),
+    ANIMCMD_END
+};
+
+static const union AnimCmd *const sSpriteAnimTable_MoveTypes[NUMBER_OF_MON_TYPES + CONTEST_CATEGORIES_COUNT] = {
+    sSpriteAnim_TypeNormal,
+    sSpriteAnim_TypeFighting,
+    sSpriteAnim_TypeFlying,
+    sSpriteAnim_TypePoison,
+    sSpriteAnim_TypeGround,
+    sSpriteAnim_TypeRock,
+    sSpriteAnim_TypeBug,
+    sSpriteAnim_TypeGhost,
+    sSpriteAnim_TypeSteel,
+    sSpriteAnim_TypeMystery,
+    sSpriteAnim_TypeFire,
+    sSpriteAnim_TypeWater,
+    sSpriteAnim_TypeGrass,
+    sSpriteAnim_TypeElectric,
+    sSpriteAnim_TypePsychic,
+    sSpriteAnim_TypeIce,
+    sSpriteAnim_TypeDragon,
+    sSpriteAnim_TypeDark,
+    sSpriteAnim_TypeFairy
+};
+*/
+static const struct SpriteTemplate sSpriteTemplate_MoveTypes =
+{
+    .tileTag = TAG_MOVE_TYPES,
+    .paletteTag = TAG_MOVE_TYPES,
+    .oam = &sOamData_MoveTypes,
+    .anims = NULL,
+    .images = NULL,
+    .affineAnims = gDummySpriteAffineAnimTable,
+    .callback = SpriteCallbackDummy
+};
+
+static const u8 sMoveTypeToOamPaletteNum[NUMBER_OF_MON_TYPES] =
+{
+    [TYPE_NORMAL] = 13,
+    [TYPE_FIGHTING] = 13,
+    [TYPE_FLYING] = 14,
+    [TYPE_POISON] = 14,
+    [TYPE_GROUND] = 13,
+    [TYPE_ROCK] = 13,
+    [TYPE_BUG] = 15,
+    [TYPE_GHOST] = 14,
+    [TYPE_STEEL] = 13,
+    [TYPE_MYSTERY] = 15,
+    [TYPE_FIRE] = 13,
+    [TYPE_WATER] = 14,
+    [TYPE_GRASS] = 15,
+    [TYPE_ELECTRIC] = 13,
+    [TYPE_PSYCHIC] = 14,
+    [TYPE_ICE] = 14,
+    [TYPE_DRAGON] = 15,
+    [TYPE_DARK] = 13,
+    [TYPE_FAIRY] = 14
+};
+
+static EWRAM_DATA struct MoveTypeScreenData
+{
+    u8 spriteIds[SPRITE_ARR_ID_TYPE];
+} *sMoveTypeSprite = NULL;
+
+static void LoadMoveTypeSpriteData(void)
+{
+    sMoveTypeSprite = AllocZeroed(sizeof(*sMoveTypeSprite));    
+    if (sMoveTypeSprite != NULL) {
+        u8 i;
+        // Initialize the spriteIds array
+        for ( i = 0; i < sizeof(sMoveTypeSprite->spriteIds); i++) {
+            sMoveTypeSprite->spriteIds[i] = SPRITE_NONE; // Or initialize with whatever default value you prefer
+            DebugPrintf("sMoveTypeSprite->spriteIds[%d]: %d", i, sMoveTypeSprite->spriteIds[i] );
+            DebugPrintf("OK!");
+        }
+    }  
+    else {
+        // Handle the case where sMoveTypeSprite is NULL
+        // This could be an error condition or you might choose to allocate memory for sMoveTypeSprite here
+    }
+}
 
 void BattleControllerDummy(void)
 {
 }
 
+
 void SetControllerToPlayer(void)
 {
     gBattlerControllerFuncs[gActiveBattler] = PlayerBufferRunCommand;
     gDoingBattleAnim = FALSE;
-    gPlayerDpadHoldFrames = 0;
+    gPlayerDpadHoldFrames = 0;    
 }
 
 static void PlayerBufferExecCompleted(void)
@@ -1494,18 +1688,56 @@ static void MoveSelectionDisplayPpNumber(void)
 }
 
 static void MoveSelectionDisplayMoveType(void)
+{   
+    LoadMoveTypeSpriteData();        
+    CreateMoveTypeIcons();
+    //SetMoveTypeIcons();    
+}
+
+static void SetSpriteInvisibility(u8 spriteArrayId, bool8 invisible)
 {
-    u8 *txtPtr;
+    gSprites[sMoveTypeSprite->spriteIds[spriteArrayId]].invisible = invisible;
+    DebugPrintf("spriteArrayId: %d", spriteArrayId);
+    DebugPrintf("sMoveTypeSprite->spriteIds[spriteArrayId]: %d",sMoveTypeSprite->spriteIds[spriteArrayId]);
+    DebugPrintf("gSprites[sMoveTypeSprite->spriteIds[spriteArrayId]]: %d",  gSprites[sMoveTypeSprite->spriteIds[spriteArrayId]]);
+    DebugPrintf("&gSprites[sMoveTypeSprite->spriteIds[spriteArrayId]]: %d",  &gSprites[sMoveTypeSprite->spriteIds[spriteArrayId]]);
+    DebugPrintf("Sprite invisibility set!");
+}
+
+static void CreateMoveTypeIcons(void)
+{
+    if (sMoveTypeSprite->spriteIds[0] == SPRITE_NONE)
+        sMoveTypeSprite->spriteIds[0] = CreateSprite(&sSpriteTemplate_MoveTypes, 216, 143, 0);
+
+    DebugPrintf("sMoveTypeSprite->spriteIds[%d]: %d", 0, sMoveTypeSprite->spriteIds[0]);
+    DebugPrintf("CreateMoveTypeIcons end");
+    SetSpriteInvisibility(0, FALSE);
+
+}
+
+static void SetTypeSpritePosAndPal(u8 typeId, u8 x, u8 y, u8 spriteArrayId)
+{
+    
+    struct Sprite *sprite = &gSprites[sMoveTypeSprite->spriteIds[spriteArrayId]];
+    DebugPrintf("&gSprites[sMoveTypeSprite->spriteIds[SPRITE_ARR_ID_TYPE - 1]: %d", gSprites[sMoveTypeSprite->spriteIds[spriteArrayId]]);
+    sprite->oam.paletteNum = sMoveTypeToOamPaletteNum[typeId];
+    sprite->x = x + 16;
+    sprite->y = y + 8;
+    SetSpriteInvisibility(spriteArrayId, FALSE);
+    DebugPrintf("OK!");
+}
+
+static void SetMoveTypeIcons(void)
+{   
+    u32 moveType;
     struct ChooseMoveStruct *moveInfo = (struct ChooseMoveStruct *)(&gBattleBufferA[gActiveBattler][4]);
 
-    txtPtr = StringCopy(gDisplayedStringBattle, gText_MoveInterfaceType);
-    *(txtPtr)++ = EXT_CTRL_CODE_BEGIN;
-    *(txtPtr)++ = EXT_CTRL_CODE_FONT;
-    *(txtPtr)++ = FONT_NORMAL;
+    moveType = gBattleMoves[moveInfo->moves[gMoveSelectionCursor[gActiveBattler]]].type;
+    DebugPrintf("move type: %d", moveType);
 
-    StringCopy(txtPtr, gTypeNames[gBattleMoves[moveInfo->moves[gMoveSelectionCursor[gActiveBattler]]].type]);
-    BattlePutTextOnWindow(gDisplayedStringBattle, B_WIN_MOVE_TYPE);
+    SetTypeSpritePosAndPal(moveType, 216, 143, 0); // i + SPRITE_ARR_ID_TYPE
 }
+
 
 static void MoveSelectionCreateCursorAt(u8 cursorPosition, u8 baseTileNum)
 {
@@ -2641,7 +2873,7 @@ static void PlayerHandleChooseMove(void)
 }
 
 void InitMoveSelectionsVarsAndStrings(void)
-{
+{   
     MoveSelectionDisplayMoveNames();
     gMultiUsePlayerCursor = 0xFF;
     MoveSelectionCreateCursorAt(gMoveSelectionCursor[gActiveBattler], 0);

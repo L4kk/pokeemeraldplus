@@ -71,6 +71,7 @@ static const struct OamData sVsLetter_S_OamData =
     .affineParam = 0,
 };
 
+
 static const union AffineAnimCmd sVsLetterAffineAnimCmds0[] =
 {
     AFFINEANIMCMD_FRAME(0x0080, 0x0080, 0x00, 0x00),
@@ -119,6 +120,7 @@ static const struct CompressedSpriteSheet sVsLettersSpriteSheet =
 {
     gVsLettersGfx, 0x1000, TAG_VS_LETTERS
 };
+
 
 const struct BgTemplate gBattleBgTemplates[] =
 {
@@ -254,11 +256,11 @@ static const struct WindowTemplate sStandardBattleWindowTemplates[] =
     },
     [B_WIN_MOVE_TYPE] = {
         .bg = 0,
-        .tilemapLeft = 21,
+        .tilemapLeft = 25,
         .tilemapTop = 57,
-        .width = 8,
+        .width = 4,
         .height = 2,
-        .paletteNum = 5,
+        .paletteNum = 13,
         .baseBlock = 0x02a0,
     },
     [B_WIN_SWITCH_PROMPT] = {
@@ -268,7 +270,7 @@ static const struct WindowTemplate sStandardBattleWindowTemplates[] =
         .width = 8,
         .height = 4,
         .paletteNum = 5,
-        .baseBlock = 0x02b0,
+        .baseBlock = 0x02c0,
     },
     [B_WIN_YESNO] = {
         .bg = 0,
@@ -692,6 +694,15 @@ static const struct BattleBackground sBattleTerrainTable[] =
     },
 };
 
+#define TAG_MOVE_TYPES 10001
+
+static const struct CompressedSpriteSheet sSpriteSheet_MoveTypes =
+{
+    .data = gMoveTypes_Gfx,
+    .size = (NUMBER_OF_MON_TYPES) * 0x100,
+    .tag = TAG_MOVE_TYPES
+};
+
 static void UNUSED CB2_UnusedBattleInit(void);
 
 static void UNUSED UnusedBattleInit(void)
@@ -746,7 +757,7 @@ void LoadBattleMenuWindowGfx(void)
     LoadUserWindowBorderGfx(2, 0x12, BG_PLTT_ID(1));
     LoadUserWindowBorderGfx(2, 0x22, BG_PLTT_ID(1));
     LoadCompressedPalette(gBattleWindowTextPalette, BG_PLTT_ID(5), PLTT_SIZE_4BPP);
-
+    LoadCompressedPalette(gMoveTypes_Pal, OBJ_PLTT_ID(13), 3 * PLTT_SIZE_4BPP);
     if (gBattleTypeFlags & BATTLE_TYPE_ARENA)
     {
         // Load graphics for the Battle Arena referee's mid-battle messages.
@@ -1204,6 +1215,8 @@ void DrawBattleEntryBackground(void)
             LZDecompressVram(gBattleTerrainAnimTilemap_Building, (void *)(BG_SCREEN_ADDR(28)));
         }
     }
+    LoadCompressedSpriteSheet(&sSpriteSheet_MoveTypes);
+    
 }
 
 bool8 LoadChosenBattleElement(u8 caseId)
